@@ -1,6 +1,7 @@
 import httpx
 import ruamel.yaml
 import os
+import time
 
 yaml = ruamel.yaml.YAML()
 yaml.indent(mapping=4)
@@ -16,7 +17,8 @@ self_path = os.path.dirname(os.path.realpath(__file__))
 def get_with_cache(url: str, filename: str):
     cache_dir = os.path.join(self_path, "cache")
     cached_list = os.listdir(cache_dir)
-    if filename in cached_list:
+    if filename in cached_list and time.time() - os.path.getmtime(os.path.join(cache_dir, filename)) < 3600:
+        file_mod_time = os.path.getmtime(os.path.join(cache_dir, filename))
         with open(os.path.join(cache_dir, filename), "r") as f:
             return f.read()
     else:
