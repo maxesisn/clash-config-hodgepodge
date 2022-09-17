@@ -1,5 +1,7 @@
 use_cache: false
 
+auto_group_whitelist: ["黑色高级节点"]
+
 config_dst: "/path/where/you/store/your/output/file.yaml"
 
 proxy: 

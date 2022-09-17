@@ -21,6 +21,7 @@ with open(os.path.join(self_path, "mix_config.yaml"), 'r') as f:
     proxies = mix_config["proxy"]
     config_dst = mix_config["config_dst"]
     use_cache = mix_config["use_cache"]
+    auto_group_whitelist = mix_config["use_cache"]
 
 
 # cache is mainly for debug porpose, should be disabled in production
@@ -175,12 +176,11 @@ for region in regions:
     }
 
 for server in external_servers:
-    auto_whitelist = ["实验性 IEPL 中继", "高级 IEPL 中继"]
     try:
         server_region = next(key for key, value in regions.items() if any(
             x in server["name"] for x in value))
         group_cata_regions[server_region]["proxies"].append(server["name"])
-        for word in auto_whitelist:
+        for word in auto_group_whitelist:
             if word in server["name"]:
                 group_cata_regions_auto[server_region]["proxies"].append(
                     server["name"])
