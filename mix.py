@@ -33,8 +33,9 @@ def get_with_cache(url: str, filename: str):
             return f.read()
     else:
         r = httpx.get(url).text
-        with open(os.path.join(cache_dir, filename), "w") as f:
-            f.write(r)
+        if use_cache:
+            with open(os.path.join(cache_dir, filename), "w") as f:
+                f.write(r)
         return r
 
 
