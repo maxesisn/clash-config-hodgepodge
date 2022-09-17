@@ -14,10 +14,20 @@ ConnectionException = (httpx.ConnectTimeout,
 
 self_path = os.path.dirname(os.path.realpath(__file__))
 
+with open(os.path.join(self_path, "mix_config.yaml"), 'r') as f:
+    mix_config = yaml.load(f)
+    custom_servers = mix_config["custom_servers"]
+    backends = mix_config["backends"]
+    proxies = mix_config["proxy"]
+    config_dst = mix_config["config_dst"]
+    use_cache = mix_config["use_cache"]
+
+
+# cache is mainly for debug porpose, should be disabled in production
 def get_with_cache(url: str, filename: str):
     cache_dir = os.path.join(self_path, "cache")
     cached_list = os.listdir(cache_dir)
-    if filename in cached_list and time.time() - os.path.getmtime(os.path.join(cache_dir, filename)) < 3600:
+    if use_cache and filename in cached_list and time.time() - os.path.getmtime(os.path.join(cache_dir, filename)) < 3600:
         file_mod_time = os.path.getmtime(os.path.join(cache_dir, filename))
         with open(os.path.join(cache_dir, filename), "r") as f:
             return f.read()
@@ -63,13 +73,6 @@ def base_pg_gen(group_rules: list[str]) -> str:
     pg_str += "\nproxies: []\n"
     return pg_str
 
-
-with open(os.path.join(self_path, "mix_config.yaml"), 'r') as f:
-    mix_config = yaml.load(f)
-    custom_servers = mix_config["custom_servers"]
-    backends = mix_config["backends"]
-    proxies = mix_config["proxy"]
-    config_dst = mix_config["config_dst"]
 
 backends_r = dict()
 

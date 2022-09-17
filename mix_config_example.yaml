@@ -1,0 +1,21 @@
+use_cache: false
+
+config_dst: "/path/where/you/store/your/output/file.yaml"
+
+proxy: 
+  "all://": "http://rick:nevergonnagiveyouup@sonymusic.com:114514"
+
+backends:
+  Airport1: "https://somewhere.website/subscribe/bmV2ZXIgZ29ubmEgbGV0IHlvdSBkb3du"
+  Airport2: "https://run.already/sub?token=bmV2ZXIgZ29ubmEgcnVuIGFyb3VuZCBhbmQgZGVzZXJ0IHlvdQ=="
+
+custom_servers:
+  - name: 🇺🇸 美国自建 1
+    server: proxy.google.com
+    password: d2Uga25vdyBlYWNoIG90aGVy
+
+  - name: 🇺🇸 美国自建 2
+    server: proxy.cloudflare.com
+    password: Zm9yIHNvIGxvbmc=
+
+
