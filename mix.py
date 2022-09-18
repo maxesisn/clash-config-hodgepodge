@@ -21,7 +21,7 @@ with open(os.path.join(self_path, "mix_config.yaml"), 'r') as f:
     proxies = mix_config["proxy"]
     config_dst = mix_config["config_dst"]
     use_cache = mix_config["use_cache"]
-    auto_group_whitelist = mix_config["use_cache"]
+    auto_group_whitelist = mix_config["auto_group_whitelist"]
 
 
 # cache is mainly for debug porpose, should be disabled in production
