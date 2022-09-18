@@ -111,7 +111,13 @@ print("base config downloaded")
 base_header = yaml.load(base_header)
 base_rule = yaml.load(base_rule)
 base_rule["rules"] = custom_rules+base_rule["rules"]
-base_pg = yaml.load(base_pg_gen(rule_extractor(base_rule["rules"])))
+rule_groups = rule_extractor(base_rule["rules"])
+base_pg = yaml.load(base_pg_gen(rule_groups))
+
+if "Google" in rule_groups:
+    group_cata_google = [
+        x for x in base_pg["proxy-groups"] if x["name"] == "Google"][0]
+    group_cata_google["proxies"].extend([x["name"] for x in custom_servers])
 
 base_config = base_header | base_pg | base_rule
 
@@ -148,16 +154,6 @@ for k in regions.keys():
     group_cata_proxy["proxies"].append(k)
     group_cata_proxy["proxies"].append(k + " - Auto")
 
-group_cata_google = {
-    "name": "Google",
-    "type": "select",
-    "proxies": [
-        "DIRECT"
-    ]
-}
-
-group_cata_google["proxies"].extend(regions.keys())
-group_cata_google["proxies"].extend([x["name"] for x in custom_servers])
 
 group_cata_regions = dict()
 for region in regions:
@@ -194,7 +190,6 @@ for region in group_cata_regions:
     base_config["proxy-groups"] = [group_cata_regions[region]] + \
         base_config["proxy-groups"]
 
-base_config["proxy-groups"] = [group_cata_google] + base_config["proxy-groups"]
 base_config["proxy-groups"] = [group_cata_proxy] + base_config["proxy-groups"]
 
 for region in group_cata_regions_auto:
