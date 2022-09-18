@@ -20,4 +20,6 @@ custom_servers:
     server: proxy.cloudflare.com
     password: Zm9yIHNvIGxvbmc=
 
+custom_rules:
+- DOMAIN-KEYWORD, google.co, Google
 

@@ -22,6 +22,7 @@ with open(os.path.join(self_path, "mix_config.yaml"), 'r') as f:
     config_dst = mix_config["config_dst"]
     use_cache = mix_config["use_cache"]
     auto_group_whitelist = mix_config["auto_group_whitelist"]
+    custom_rules = mix_config["custom_rules"]
 
 
 # cache is mainly for debug porpose, should be disabled in production
@@ -109,6 +110,7 @@ print("base config downloaded")
 
 base_header = yaml.load(base_header)
 base_rule = yaml.load(base_rule)
+base_rule["rules"] = custom_rules+base_rule["rules"]
 base_pg = yaml.load(base_pg_gen(rule_extractor(base_rule["rules"])))
 
 base_config = base_header | base_pg | base_rule
