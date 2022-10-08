@@ -58,8 +58,8 @@ pg_template = '''
   - name: {{name}}
     type: select
     proxies:
-      - DIRECT
       - Proxy
+      - DIRECT
       - HK
       - JP
       - SG
@@ -108,6 +108,7 @@ for i in range(10):
 
 print("base config downloaded")
 
+base_header = base_header.replace("{2,4}", "{2,5}")
 base_header = yaml.load(base_header)
 base_rule = yaml.load(base_rule)
 base_rule["rules"] = custom_rules+base_rule["rules"]
@@ -118,6 +119,11 @@ if "Google" in rule_groups:
     group_cata_google = [
         x for x in base_pg["proxy-groups"] if x["name"] == "Google"][0]
     group_cata_google["proxies"].extend([x["name"] for x in custom_servers])
+
+if "AdBlock" in rule_groups:
+    group_cata_adblock = [
+        x for x in base_pg["proxy-groups"] if x["name"] == "AdBlock"][0]
+    group_cata_adblock["proxies"].append("REJECT")
 
 base_config = base_header | base_pg | base_rule
 
