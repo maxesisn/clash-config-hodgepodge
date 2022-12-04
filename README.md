@@ -6,6 +6,7 @@
 
 1. `cp mix_config_example.yaml mix_config.yaml`
 2. 修改`config_dst`路径至生成最终配置文件的路径
+2. 修改`auto_group_whitelist`，指定带有关键词的节点可以进入`Auto`策略组
 3. 修改`proxy`使配置文件通过该http代理下载
 4. 按`机场名: Clash订阅地址`格式修改`backends`
 5. 在`custom_servers`中填入你自建的节点，格式与clash配置相同
