@@ -222,7 +222,6 @@ for region in group_cata_regions_auto:
     base_config["proxy-groups"].append(group_cata_regions_auto[region])
 
     
-
 if not auto_proxy_flag:
     print(f"Error: No auto proxy found")
     exit()
