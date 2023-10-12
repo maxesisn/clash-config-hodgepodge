@@ -1,0 +1,33 @@
+output: /xxx/config.yaml
+base_sub: https://dler.cloud/subscribe/1145141919810?clash=smart&type=love
+
+proxies:
+- name: 🇭🇰 香港
+  type: vless
+  server: 1.1.1.1
+  port: 1234
+  uuid: b691ff92-8576-4e8d-922e-a749cde5f99b
+  network: tcp
+  tls: true
+  udp: true
+  flow: xtls-rprx-vision
+  servername: addons.mozilla.org
+  reality-opts:
+      public-key: xxx
+      short-id: 0
+  client-fingerprint: chrome
+
+- name: 🇺🇸 美国
+  type: vless
+  server: 2.2.2.2
+  port: 1234
+  uuid: 25491ba8-a30a-434c-88ae-161127bf1aaf
+  network: tcp
+  tls: true
+  udp: true
+  flow: xtls-rprx-vision
+  servername: mensura.cdn-apple.com
+  reality-opts:
+      public-key: xxx
+      short-id: 0
+  client-fingerprint: chrome
