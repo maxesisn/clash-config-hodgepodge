@@ -16,6 +16,7 @@ with open("custom_config.yaml", "r", encoding="utf-8") as f:
 
 base_config_url = custom_config["base_sub"]
 output = custom_config["output"]
+output_extra = output.replace(".yaml", "_extra.yaml")
 
 # 下载配置文件，保存到base.yaml
 with httpx.Client(headers=headers) as client:
@@ -39,42 +40,52 @@ for group in base['proxy-groups']:
 
 custom_proxies: list = custom_config["proxies"]
 
-# 下载第三方订阅，取出其中的proxy部分
-for source in custom_config["sources"]:
-    with httpx.Client(headers=headers) as client:
-        r = client.get(source)
-        proxies = yaml.load(r.text)
-        for proxy in proxies["proxies"]:
-            if proxy["name"] not in allowed_proxies:
-                custom_proxies.append(proxy)
-                
-proxies_blacklist = custom_config["proxies_blacklist"]
+custom_rules = custom_config["rules"]
 
-# 过滤节点名含有关键字的节点
-for proxy in custom_proxies:
-    for keyword in proxies_blacklist:
-        if keyword in proxy["name"]:
-            custom_proxies.remove(proxy)
-            break
-        
-# 修改url-test类型的节点interval为300
-for proxy in custom_proxies:
-    if proxy["type"] == "url-test":
-        proxy["interval"] = 300
-
+for rule in custom_rules:
+    base["rules"].insert(0, rule)
+    
 # 添加自定义配置
 for proxy in custom_proxies:
     base["proxies"].append(proxy)
     for group in base["proxy-groups"]:
         group["proxies"].append(proxy["name"])
+        if group["type"] == "url-test":
+            group["interval"] = 30
 
-custom_rules = custom_config["rules"]
-
-for rule in custom_rules:
-    base["rules"].insert(0, rule)
 
 # 保存配置文件
 with open(output, "w", encoding="utf-8") as f:
+    yaml.dump(base, f)
+
+# 下载第三方订阅，取出其中的proxy部分
+sub_custom_proxies = []
+if "sources" in custom_config and custom_config["sources"] is not None and len(custom_config["sources"]) > 0:
+    for source in custom_config["sources"]:
+        with httpx.Client(headers=headers) as client:
+            r = client.get(source)
+            proxies = yaml.load(r.text)
+            for proxy in proxies["proxies"]:
+                sub_custom_proxies.append(proxy)
+
+proxies_blacklist = custom_config["proxies_blacklist"]
+
+# 过滤节点名含有关键字的节点
+for keyword in proxies_blacklist:
+    sub_custom_proxies = [proxy for proxy in sub_custom_proxies if keyword not in proxy["name"]]
+
+# 含有机场节点的改为600间隔
+for proxy in sub_custom_proxies:
+    for group in base["proxy-groups"]:
+        group["proxies"].append(proxy["name"])
+        if group["type"] == "url-test":
+            group["interval"] = 600
+
+
+# 重新生成base 保存额外proxies
+base["proxies"].extend(sub_custom_proxies)
+
+with open(output_extra, "w", encoding="utf-8") as f:
     yaml.dump(base, f)
 
 # 删除base.yaml
