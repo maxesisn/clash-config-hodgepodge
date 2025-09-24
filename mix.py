@@ -1,6 +1,7 @@
 import os
 import httpx
 import ruamel.yaml
+from copy import deepcopy
 
 yaml = ruamel.yaml.YAML()
 yaml.indent(mapping=4)
@@ -27,6 +28,7 @@ with httpx.Client(headers=headers) as client:
 # 读取配置文件
 with open("base.yaml", "r", encoding="utf-8") as f:
     base = yaml.load(f)
+
 
 # 清空proxies
 base["proxies"] = []
@@ -69,6 +71,7 @@ if "sources" in custom_config and custom_config["sources"] is not None and len(c
                 sub_custom_proxies.append(proxy)
 
 proxies_blacklist = custom_config["proxies_blacklist"]
+proxies_superwhitelist = custom_config["proxies_superwhitelist"]
 
 # 过滤节点名含有关键字的节点
 for keyword in proxies_blacklist:
@@ -81,6 +84,16 @@ for proxy in sub_custom_proxies:
         if group["type"] == "url-test":
             group["interval"] = 600
 
+if proxies_superwhitelist:
+    base_proxy_pg = [pg for pg in base["proxy-groups"] if pg["name"] == "Auto - UrlTest"][0]
+    base_sw_pg = deepcopy(base_proxy_pg)
+    qualified_proxies = []
+    for p_b in base_sw_pg["proxies"]:
+        if any(p_sw in p_b for p_sw in proxies_superwhitelist):
+            qualified_proxies.append(p_b)
+    base_sw_pg["name"] = "SuperWhite"
+    base_sw_pg["proxies"] = deepcopy(qualified_proxies)
+    base["proxy-groups"].append(base_sw_pg)
 
 # 重新生成base 保存额外proxies
 base["proxies"].extend(sub_custom_proxies)
