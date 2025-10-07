@@ -8,35 +8,58 @@ proxies_blacklist:
   - 剩余流量
 
 proxies:
-- name: 🇭🇰 香港
-  type: vless
-  server: 1.1.1.1
-  port: 1234
-  uuid: b691ff92-8576-4e8d-922e-a749cde5f99b
-  network: tcp
-  tls: true
-  udp: true
-  flow: xtls-rprx-vision
-  servername: addons.mozilla.org
-  reality-opts:
-      public-key: xxx
-      short-id: 0
-  client-fingerprint: chrome
+  - name: 🇭🇰 香港
+    type: vless
+    server: 1.1.1.1
+    port: 1234
+    uuid: b691ff92-8576-4e8d-922e-a749cde5f99b
+    network: tcp
+    tls: true
+    udp: true
+    flow: xtls-rprx-vision
+    servername: addons.mozilla.org
+    reality-opts:
+        public-key: xxx
+        short-id: 0
+    client-fingerprint: chrome
 
-- name: 🇺🇸 美国
-  type: vless
-  server: 2.2.2.2
-  port: 1234
-  uuid: 25491ba8-a30a-434c-88ae-161127bf1aaf
-  network: tcp
-  tls: true
-  udp: true
-  flow: xtls-rprx-vision
-  servername: mensura.cdn-apple.com
-  reality-opts:
-      public-key: xxx
-      short-id: 0
-  client-fingerprint: chrome
+  - name: 🇺🇸 美国
+    type: vless
+    server: 2.2.2.2
+    port: 1234
+    uuid: 25491ba8-a30a-434c-88ae-161127bf1aaf
+    network: tcp
+    tls: true
+    udp: true
+    flow: xtls-rprx-vision
+    servername: mensura.cdn-apple.com
+    reality-opts:
+        public-key: xxx
+        short-id: 0
+    client-fingerprint: chrome
 
 rules:
   - DST-PORT,3478,DIRECT
+
+surge:
+  output: /xxx/surge.conf
+  base_sub: https://dler.cloud/subscribe/lHDfhkFUt2dEJpPZIjeG?surge=smart&lv=2%7C3%7C4%7C5%7C6%7C8
+  proxies:
+    - name: 🇭🇰 Snell
+      type: snell
+      server: 3.3.3.3
+      port: 4443
+      psk: example-psk
+      version: 5
+      obfs: shadowtls
+      obfs-host: addons.mozilla.org
+      obfs-password: change-me
+  proxy_groups:
+    - name: 自建Snell
+      type: select
+      proxies:
+        - 🇭🇰 Snell
+        - DIRECT
+      interval: 300
+  rules:
+    - DOMAIN,example.com,自建Snell
