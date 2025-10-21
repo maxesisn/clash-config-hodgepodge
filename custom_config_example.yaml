@@ -1,65 +1,153 @@
-output: /xxx/config.yaml
-base_sub: https://dler.cloud/subscribe/1145141919810?clash=smart&type=love
+# ==============================================================================
+# Clash & Surge 统一配置示例
+# ==============================================================================
+#
+# 本项目支持两种配置格式：
+#
+# 【新格式】（推荐）- 统一节点配置，自动生成Clash和Surge两份配置
+#   - 在顶层 `proxies` 中定义统一的节点信息（使用Clash格式）
+#   - 在 `clash` 和 `surge` 块中分别配置输出参数
+#   - 节点会自动转换为Surge格式（不支持的协议会跳过）
+#
+# 【旧格式】（向后兼容）- 独立配置
+#   - 顶层配置用于Clash
+#   - `surge` 块中独立配置Surge节点
+#
+# ==============================================================================
 
-sources:
-  - https://希思罗机场.com/api/v1/client/subscribe?token=1145141919810
-
-proxies_blacklist:
-  - 剩余流量
+# ==================== 统一节点配置 ====================
+# 在这里定义的节点会同时应用到 Clash 和 Surge
+# 使用 Clash 格式定义，会自动转换为 Surge 格式
+#
+# 注意：
+# - VLESS with Reality/XTLS 无法转换到Surge（会被跳过）
+# - 推荐使用 Shadowsocks, Trojan, Snell 等Surge支持的协议
 
 proxies:
-  - name: 🇭🇰 香港
-    type: vless
+  # Shadowsocks 节点（完美支持）
+  - name: 🇭🇰 HK-SS
+    type: ss
     server: 1.1.1.1
-    port: 1234
-    uuid: b691ff92-8576-4e8d-922e-a749cde5f99b
-    network: tcp
-    tls: true
+    port: 8388
+    cipher: aes-256-gcm
+    password: your-password
     udp: true
-    flow: xtls-rprx-vision
-    servername: addons.mozilla.org
-    reality-opts:
-        public-key: xxx
-        short-id: 0
-    client-fingerprint: chrome
 
-  - name: 🇺🇸 美国
-    type: vless
+  # Trojan 节点（完美支持）
+  - name: 🇺🇸 US-Trojan
+    type: trojan
     server: 2.2.2.2
-    port: 1234
-    uuid: 25491ba8-a30a-434c-88ae-161127bf1aaf
+    port: 443
+    password: your-password
+    sni: example.com
+    skip-cert-verify: false
+    udp: true
+
+  # Snell 节点（完美支持）
+  - name: 🇯🇵 JP-Snell
+    type: snell
+    server: 3.3.3.3
+    port: 4443
+    psk: your-psk
+    version: 4
+
+  # VLESS 节点（警告：带Reality的无法转换到Surge）
+  # 如果你只需要Clash配置，可以添加这类节点
+  # 如果需要Surge配置，建议使用上述协议
+  - name: 🇸🇬 SG-VLESS
+    type: vless
+    server: 4.4.4.4
+    port: 443
+    uuid: your-uuid
     network: tcp
     tls: true
-    udp: true
-    flow: xtls-rprx-vision
-    servername: mensura.cdn-apple.com
-    reality-opts:
-        public-key: xxx
-        short-id: 0
-    client-fingerprint: chrome
+    # 注意：包含flow和reality-opts的节点无法转换到Surge
+    # flow: xtls-rprx-vision
+    # reality-opts:
+    #   public-key: xxx
+    #   short-id: 0
 
-rules:
-  - DST-PORT,3478,DIRECT
+# ==================== Clash 配置 ====================
+clash:
+  enabled: true  # 是否启用Clash配置生成
+  output: /path/to/clash/config.yaml  # Clash配置输出路径
+  base_sub: https://dler.cloud/subscribe/xxx?clash=smart  # 基础订阅URL
 
-surge:
-  output: /xxx/surge.conf
-  base_sub: https://dler.cloud/subscribe/lHDfhkFUt2dEJpPZIjeG?surge=smart&lv=2%7C3%7C4%7C5%7C6%7C8
-  proxies:
-    - name: 🇭🇰 Snell
-      type: snell
-      server: 3.3.3.3
-      port: 4443
-      psk: example-psk
-      version: 5
-      obfs: shadowtls
-      obfs-host: addons.mozilla.org
-      obfs-password: change-me
-  proxy_groups:
-    - name: 自建Snell
-      type: select
-      proxies:
-        - 🇭🇰 Snell
-        - DIRECT
-      interval: 300
+  # 第三方订阅源（可选）
+  sources:
+    - https://example.com/api/v1/client/subscribe?token=xxx
+
+  # 黑名单过滤（可选）
+  # 包含以下关键词的节点会被移除
+  proxies_blacklist:
+    - 剩余流量
+    - 过期时间
+    - 官网
+
+  # 超级白名单（可选）
+  # 创建一个只包含特定关键词节点的 "SuperWhite" 代理组
+  proxies_superwhitelist: []
+    # - 香港
+    # - 台湾
+
+  # 自定义规则（可选）
+  # 这些规则会被插入到规则列表的最前面
   rules:
-    - DOMAIN,example.com,自建Snell
+    - DST-PORT,3478,DIRECT
+    - DOMAIN-SUFFIX,local,DIRECT
+
+# ==================== Surge 配置 ====================
+surge:
+  enabled: true  # 是否启用Surge配置生成
+  output: /path/to/surge/config.conf  # Surge配置输出路径
+  base_sub: https://dler.cloud/subscribe/xxx?surge=smart  # 基础订阅URL
+
+  # 自定义规则（可选）
+  # 由于Clash规则可能难以完美转换，这里可以单独配置Surge规则
+  rules:
+    - DOMAIN,example.com,DIRECT
+    - IP-CIDR,192.168.0.0/16,DIRECT
+
+# ==============================================================================
+# 旧格式配置示例（向后兼容）
+# ==============================================================================
+#
+# 如果你不想使用统一配置，可以删除上面的 clash 和 surge 配置块，
+# 使用以下旧格式：
+#
+# # Clash配置（顶层）
+# output: /xxx/config.yaml
+# base_sub: https://...
+# sources: [...]
+# proxies_blacklist: [...]
+# proxies_superwhitelist: []
+# proxies:
+#   - name: 节点1
+#     type: ss
+#     ...
+# rules:
+#   - DOMAIN,example.com,DIRECT
+#
+# # Surge配置（独立块）
+# surge:
+#   output: /xxx/surge.conf
+#   base_sub: https://...
+#   proxies:
+#     - name: Surge专用节点
+#       type: snell
+#       ...
+#   proxy_groups:
+#     - name: 自定义组
+#       type: select
+#       proxies: [...]
+#   rules:
+#     - DOMAIN,example.com,DIRECT
+#
+# ==============================================================================
+
+# 使用说明：
+# 1. 复制此文件为 custom_config.yaml
+# 2. 修改配置参数（订阅URL、输出路径等）
+# 3. 在 proxies 中添加你的自定义节点
+# 4. 运行 python3 mix.py 生成 Clash 配置
+# 5. 运行 python3 surge_mix.py 生成 Surge 配置
