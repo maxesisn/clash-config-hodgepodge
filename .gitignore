@@ -1,3 +1,6 @@
 custom_config.yaml
 cache/
 .vscode/
+__pycache__/
+*.pyc
+*.pyo
