@@ -97,9 +97,10 @@ if proxies_superwhitelist:
         base_sw_pg["proxies"] = [proxy["name"] for proxy in superwhite_proxies]
         base["proxy-groups"].append(base_sw_pg)
         
-        # 将 SuperWhite 组添加到 Proxy 选择组中，方便手动切换
+        # 将 SuperWhite 组添加到所有分组中（除了 Proxy 和 SuperWhite 自己）
+        # Proxy 组已经可以选择 SuperWhite，不需要重复添加
         for group in base["proxy-groups"]:
-            if group["name"] == "Proxy" and "SuperWhite" not in group["proxies"]:
+            if group["name"] not in ("Proxy", "SuperWhite") and "SuperWhite" not in group["proxies"]:
                 group["proxies"].append("SuperWhite")
         
         # 只添加 superwhite 节点到 proxies 列表
