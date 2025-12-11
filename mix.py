@@ -9,7 +9,7 @@ yaml.encoding = "utf-8"
 yaml.default_flow_style = False
 yaml.allow_unicode = True
 
-headers = {'user-agent': 'clash-ver/1.18.0'}
+headers = {'user-agent': 'clash-verge/2.4.3'}
 
 # 读取自定义配置
 with open("custom_config.yaml", "r", encoding="utf-8") as f:
