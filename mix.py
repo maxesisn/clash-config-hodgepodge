@@ -70,33 +70,50 @@ if "sources" in custom_config and custom_config["sources"] is not None and len(c
             for proxy in proxies["proxies"]:
                 sub_custom_proxies.append(proxy)
 
-proxies_blacklist = custom_config["proxies_blacklist"]
-proxies_superwhitelist = custom_config["proxies_superwhitelist"]
+proxies_blacklist = custom_config.get("proxies_blacklist", [])
+proxies_superwhitelist = custom_config.get("proxies_superwhitelist", [])
 
-# 过滤节点名含有关键字的节点
+# 过滤节点名含有关键字的节点（blacklist）
 for keyword in proxies_blacklist:
     sub_custom_proxies = [proxy for proxy in sub_custom_proxies if keyword not in proxy["name"]]
 
-# 含有机场节点的改为600间隔
-for proxy in sub_custom_proxies:
-    for group in base["proxy-groups"]:
-        group["proxies"].append(proxy["name"])
-        if group["type"] == "url-test":
-            group["interval"] = 600
-
 if proxies_superwhitelist:
-    base_proxy_pg = [pg for pg in base["proxy-groups"] if pg["name"] == "Auto - UrlTest"][0]
-    base_sw_pg = deepcopy(base_proxy_pg)
-    qualified_proxies = []
-    for p_b in base_sw_pg["proxies"]:
-        if any(p_sw in p_b for p_sw in proxies_superwhitelist):
-            qualified_proxies.append(p_b)
-    base_sw_pg["name"] = "SuperWhite"
-    base_sw_pg["proxies"] = deepcopy(qualified_proxies)
-    base["proxy-groups"].append(base_sw_pg)
-
-# 重新生成base 保存额外proxies
-base["proxies"].extend(sub_custom_proxies)
+    # 有 superwhite 时：只添加符合 superwhite 的节点到独立的 SuperWhite 组
+    # 主力组（Auto - UrlTest 等）保持只有自定义节点
+    
+    # 筛选符合 superwhite 的节点
+    superwhite_proxies = [
+        proxy for proxy in sub_custom_proxies 
+        if any(sw_keyword in proxy["name"] for sw_keyword in proxies_superwhitelist)
+    ]
+    
+    if superwhite_proxies:
+        # 创建 SuperWhite 组，基于 Auto - UrlTest 的配置
+        base_proxy_pg = [pg for pg in base["proxy-groups"] if pg["name"] == "Auto - UrlTest"][0]
+        base_sw_pg = deepcopy(base_proxy_pg)
+        base_sw_pg["name"] = "SuperWhite"
+        base_sw_pg["interval"] = 600  # 机场节点使用较长间隔
+        # SuperWhite 组只包含符合条件的机场节点
+        base_sw_pg["proxies"] = [proxy["name"] for proxy in superwhite_proxies]
+        base["proxy-groups"].append(base_sw_pg)
+        
+        # 将 SuperWhite 组添加到 Proxy 选择组中，方便手动切换
+        for group in base["proxy-groups"]:
+            if group["name"] == "Proxy" and "SuperWhite" not in group["proxies"]:
+                group["proxies"].append("SuperWhite")
+        
+        # 只添加 superwhite 节点到 proxies 列表
+        base["proxies"].extend(superwhite_proxies)
+else:
+    # 无 superwhite 时：所有非 blacklist 的机场节点都添加到主组中
+    for proxy in sub_custom_proxies:
+        for group in base["proxy-groups"]:
+            group["proxies"].append(proxy["name"])
+            if group["type"] == "url-test":
+                group["interval"] = 600
+    
+    # 添加所有节点到 proxies 列表
+    base["proxies"].extend(sub_custom_proxies)
 
 with open(output_extra, "w", encoding="utf-8") as f:
     yaml.dump(base, f)
