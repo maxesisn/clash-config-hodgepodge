@@ -97,10 +97,10 @@ if proxies_superwhitelist:
         base_sw_pg["proxies"] = [proxy["name"] for proxy in superwhite_proxies]
         base["proxy-groups"].append(base_sw_pg)
         
-        # 将 SuperWhite 组添加到所有分组中（除了 Proxy 和 SuperWhite 自己）
-        # Proxy 组已经可以选择 SuperWhite，不需要重复添加
+        # 将 SuperWhite 组添加到所有 select 类型的分组中（除了 SuperWhite 自己）
+        # 这样 SuperWhite 会出现在 Proxy（select）里可手动选，但不会出现在 Auto - UrlTest（url-test）里
         for group in base["proxy-groups"]:
-            if group["name"] not in ("Proxy", "SuperWhite") and "SuperWhite" not in group["proxies"]:
+            if group["type"] == "select" and group["name"] != "SuperWhite" and "SuperWhite" not in group["proxies"]:
                 group["proxies"].append("SuperWhite")
         
         # 只添加 superwhite 节点到 proxies 列表
