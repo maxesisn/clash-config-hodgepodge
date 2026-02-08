@@ -1,0 +1,35 @@
+output: /path/to/config.yaml
+mihomo_dir: /home/maxesisn/clash-config/cache/mihomo
+base_sub_groups:
+  main:
+    name: My Airport
+    url: https://example.com/subscribe?clash=smart
+    user_agent: clash-verge/2.4.3
+    proxy_groups:
+      main_select: Proxy
+      special_groups:
+        adblock: AdBlock
+        domestic: Domestic
+        ai: AI
+active_group: main
+sources:
+  - https://example.com/third-party-subscribe?token=abc123
+proxies:
+  - name: HK Sharon | REALITY-gRPC
+    type: vless
+    server: 1.1.1.1
+    port: 1234
+    uuid: b691ff92-8576-4e8d-922e-a749cde5f99b
+    network: grpc
+    tls: true
+    udp: true
+    client-fingerprint: chrome
+    servername: software.download.prss.microsoft.com
+    grpc-opts:
+      grpc-service-name: grpc
+    reality-opts:
+      public-key: example
+      short-id: 6ba85179e30d4fc2
+rules:
+  - DST-PORT,3478,DIRECT
+  - DOMAIN-SUFFIX,example.com,{ai}

@@ -1,0 +1,7 @@
+http_proxy: http://127.0.0.1:8888
+white_keywords:
+  - IEPL
+  - Premium
+proxies_blacklist:
+  - 剩余流量
+  - 到期

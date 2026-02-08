@@ -1,0 +1,23 @@
+output: /path/to/surge.conf
+base_sub: https://example.com/subscribe?surge=smart
+user_agent: surge/5.0
+proxy_groups:
+  main_select: Proxy
+  special_groups:
+    domestic: DIRECT
+    ai: AI
+    adblock: REJECT
+sources:
+  - https://example.com/subscribe?surge=smart
+proxies:
+  - name: HK Snell
+    type: snell
+    server: 3.3.3.3
+    port: 4443
+    psk: example-psk
+    version: 5
+    obfs: shadowtls
+    obfs-host: addons.mozilla.org
+    obfs-password: change-me
+rules:
+  - DOMAIN,example.com,{ai}
