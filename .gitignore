@@ -1,7 +1,9 @@
 custom_config.yaml
 cache/
 .vscode/
-common_config.yaml
-clash_config.yaml
-surge_config.yaml
+config_common.yaml
+config_clash.yaml
+config_surge.yaml
 __pycache__/
+.venv/
+*.ini

@@ -214,16 +214,16 @@ def run_guide():
     }
 
     # 检查是否存在现有配置
-    if os.path.exists("clash_config.yaml") or os.path.exists("common_config.yaml"):
+    if os.path.exists("config_clash.yaml") or os.path.exists("config_common.yaml"):
         print_section("发现现有配置")
         choice = input("  是否导入现有配置? [Y/n]: ").strip().lower()
         if choice != "n":
-            if os.path.exists("common_config.yaml"):
-                with open("common_config.yaml", "r", encoding="utf-8") as f:
+            if os.path.exists("config_common.yaml"):
+                with open("config_common.yaml", "r", encoding="utf-8") as f:
                     existing_common = yaml.load(f) or {}
                     common_data.update(existing_common)
-            if os.path.exists("clash_config.yaml"):
-                with open("clash_config.yaml", "r", encoding="utf-8") as f:
+            if os.path.exists("config_clash.yaml"):
+                with open("config_clash.yaml", "r", encoding="utf-8") as f:
                     existing_clash = yaml.load(f) or {}
                     clash_data.update(existing_clash)
             # Legacy fallback: custom_config.yaml if still present
@@ -407,20 +407,20 @@ def run_guide():
             print(f"      特殊组映射: {', '.join(special.keys())}")
 
     # 生成配置文件
-    print("\n  生成配置: common_config.yaml + clash_config.yaml")
+    print("\n  生成配置: config_common.yaml + config_clash.yaml")
 
-    with open("common_config.yaml", "w", encoding="utf-8") as f:
+    with open("config_common.yaml", "w", encoding="utf-8") as f:
         yaml.dump(common_data, f)
-    with open("clash_config.yaml", "w", encoding="utf-8") as f:
+    with open("config_clash.yaml", "w", encoding="utf-8") as f:
         yaml.dump(clash_data, f)
 
 
 def run_surge_guide():
     print_header("Surge 配置向导")
     print("\n本向导将帮助你：")
-    print("  1. 添加机场 Surge 订阅")
+    print("  1. 添加机场 Surge 订阅分组")
     print("  2. 映射代理组")
-    print("  3. 生成/更新 surge_config.yaml")
+    print("  3. 生成/更新 config_surge.yaml")
 
     common_data = {
         "http_proxy": "",
@@ -429,59 +429,79 @@ def run_surge_guide():
     }
     surge_data = {
         "output": "/home/maxesisn/wlan/wowsuchhidden/surge.conf",
-        "base_sub": "",
-        "user_agent": "surge/5.0",
-        "proxy_groups": {},
-        "proxies": [],
+        "base_sub_groups": {},
+        "active_group": "",
+        "proxies": {},
         "rules": [],
         "sources": [],
     }
 
-    if os.path.exists("surge_config.yaml") or os.path.exists("common_config.yaml"):
+    if os.path.exists("config_surge.yaml") or os.path.exists("config_common.yaml"):
         print_section("发现现有配置")
         choice = input("  是否导入现有配置? [Y/n]: ").strip().lower()
         if choice != "n":
-            if os.path.exists("common_config.yaml"):
-                with open("common_config.yaml", "r", encoding="utf-8") as f:
+            if os.path.exists("config_common.yaml"):
+                with open("config_common.yaml", "r", encoding="utf-8") as f:
                     existing_common = yaml.load(f) or {}
                     common_data.update(existing_common)
-            if os.path.exists("surge_config.yaml"):
-                with open("surge_config.yaml", "r", encoding="utf-8") as f:
+            if os.path.exists("config_surge.yaml"):
+                with open("config_surge.yaml", "r", encoding="utf-8") as f:
                     existing_surge = yaml.load(f) or {}
                     surge_data.update(existing_surge)
 
-    print_section("步骤 1: 添加机场 Surge 订阅")
-    sub_url = input("\n  Surge 订阅链接: ").strip()
-    if sub_url:
-        surge_data["base_sub"] = sub_url
+    print_section("步骤 1: 添加机场 Surge 订阅分组")
 
-    ua_input = input("  User-Agent (默认 surge/5.0): ").strip()
-    if ua_input:
-        surge_data["user_agent"] = ua_input
+    while True:
+        group_name = input("\n  订阅分组名称 (如: dler, nexitally): ").strip()
+        if not group_name:
+            if not surge_data["base_sub_groups"]:
+                print("  至少需要添加一个订阅分组")
+                continue
+            break
 
-    print(f"\n  正在获取配置 (UA: {surge_data['user_agent']})...")
-    try:
-        proxy_override = common_data.get("http_proxy") or None
-        transport = _make_transport(proxy_override)
-        with httpx.Client(headers={"user-agent": surge_data["user_agent"]}, timeout=30, follow_redirects=True, transport=transport) as client:
-            r = client.get(sub_url)
-            r.raise_for_status()
-            base_text = r.text
+        if group_name in surge_data["base_sub_groups"]:
+            overwrite = input("  该分组已存在，是否覆盖? [y/N]: ").strip().lower()
+            if overwrite != "y":
+                continue
 
-        from surge_config import SurgeConfig, SurgeKeyValue
+        sub_name = input("  订阅名称 (展示用，可留空): ").strip() or group_name
+        sub_url = input("  Surge 订阅链接: ").strip()
+        ua_input = input("  User-Agent (默认 surge/5.0): ").strip() or "surge/5.0"
 
-        surge_cfg = SurgeConfig.from_text(base_text)
-        group_section = surge_cfg.get_section("Proxy Group")
-        group_entries = []
-        if group_section:
-            for entry in group_section.entries:
-                if isinstance(entry, SurgeKeyValue):
-                    group_entries.append((entry.key, entry.value))
-        if not group_entries:
-            print("  警告: 配置中没有找到 Proxy Group")
-        else:
+        print(f"\n  正在获取配置 (UA: {ua_input})...")
+        try:
+            proxy_override = common_data.get("http_proxy") or None
+            transport = _make_transport(proxy_override)
+            with httpx.Client(headers={"user-agent": ua_input}, timeout=30, follow_redirects=True, transport=transport) as client:
+                r = client.get(sub_url)
+                r.raise_for_status()
+                base_text = r.text
+
+            from surge_config import SurgeConfig, SurgeKeyValue
+
+            surge_cfg = SurgeConfig.from_text(base_text)
+            group_section = surge_cfg.get_section("Proxy Group")
+            group_entries = []
+            if group_section:
+                for entry in group_section.entries:
+                    if isinstance(entry, SurgeKeyValue):
+                        group_entries.append((entry.key, entry.value))
+
+            if not group_entries:
+                print("  警告: 配置中没有找到 Proxy Group")
+                continue
+
             print(f"  成功! 发现 {len(group_entries)} 个代理组")
             groups_by_type = detect_surge_group_types(group_entries)
+
+            print_section(f"'{sub_name}' 的代理组分析")
+            for gtype, names in groups_by_type.items():
+                if names:
+                    print(f"\n  {gtype.upper()} 类型 ({len(names)}个):")
+                    for name in names[:5]:
+                        print(f"    - {name}")
+                    if len(names) > 5:
+                        print(f"    ... 还有 {len(names) - 5} 个")
 
             print_section("配置代理组映射")
             select_groups = groups_by_type["select"]
@@ -494,10 +514,18 @@ def run_surge_guide():
                 "选择主选择组 (通常是 'Proxy' 或 '手动选择'):",
                 allow_none=False
             )
-            surge_data["proxy_groups"]["main_select"] = main_select
+
+            sub_config = {
+                "name": sub_name,
+                "url": sub_url,
+                "user_agent": ua_input,
+                "proxy_groups": {
+                    "main_select": main_select,
+                    "special_groups": {},
+                }
+            }
 
             print_section("特殊用途组映射 (可选)")
-            surge_data["proxy_groups"]["special_groups"] = {}
             detected_special = detect_special_groups([{"name": name} for name, _ in group_entries])
             special_purposes = [
                 ("adblock", "广告拦截 (AdBlock)", detected_special["adblock"]),
@@ -513,11 +541,31 @@ def run_surge_guide():
                     print(f"  检测到可能选项: {', '.join(suggestions[:3])}")
                 selected = select_from_list(all_groups, f"选择 {label} 对应的组:", allow_none=True)
                 if selected:
-                    surge_data["proxy_groups"]["special_groups"][key] = selected
-    except Exception as e:
-        print(f"  错误: 获取配置失败 - {e}")
+                    sub_config["proxy_groups"]["special_groups"][key] = selected
 
-    print_section("步骤 2: 代理与节点过滤配置 (可选)")
+            surge_data["base_sub_groups"][group_name] = sub_config
+
+            if not surge_data["active_group"]:
+                surge_data["active_group"] = group_name
+
+            print(f"\n  ✓ 订阅分组 '{group_name}' 配置完成")
+
+        except Exception as e:
+            print(f"  错误: 获取配置失败 - {e}")
+            continue
+
+        more = input("\n  是否继续添加其他订阅? [y/N]: ").strip().lower()
+        if more != "y":
+            break
+
+    # 选择默认使用的订阅分组
+    if len(surge_data["base_sub_groups"]) > 1:
+        print_section("步骤 2: 选择默认使用的订阅分组")
+        group_names = list(surge_data["base_sub_groups"].keys())
+        active = select_from_list(group_names, "选择默认激活的订阅分组:", allow_none=False)
+        surge_data["active_group"] = active
+
+    print_section("代理与节点过滤配置 (可选)")
     print("\n  【HTTP 代理】- 获取订阅时使用 (留空表示不设置)")
     print(f"  当前默认: {common_data.get('http_proxy') or '未设置'}")
     proxy_input = input("  输入代理地址 (例如 http://127.0.0.1:8888): ").strip()
@@ -537,20 +585,29 @@ def run_surge_guide():
         common_data["white_keywords"] = [k.strip() for k in whitelist_input.split() if k.strip()]
 
     print_section("配置完成")
-    print("\n  生成配置: common_config.yaml + surge_config.yaml")
+    print(f"\n  订阅分组: {len(surge_data['base_sub_groups'])} 个")
+    for name, sub in surge_data["base_sub_groups"].items():
+        active_mark = " ✓ 默认" if name == surge_data["active_group"] else ""
+        display_name = sub.get("name") or name
+        print(f"    - {name} ({display_name}){active_mark}")
+        pg = sub.get("proxy_groups", {})
+        print(f"      主选择组: {pg.get('main_select', 'N/A')}")
+        special = pg.get("special_groups", {})
+        if special:
+            print(f"      特殊组映射: {', '.join(special.keys())}")
 
-    with open("common_config.yaml", "w", encoding="utf-8") as f:
+    print("\n  生成配置: config_common.yaml + config_surge.yaml")
+
+    with open("config_common.yaml", "w", encoding="utf-8") as f:
         yaml.dump(common_data, f)
-    with open("surge_config.yaml", "w", encoding="utf-8") as f:
+    with open("config_surge.yaml", "w", encoding="utf-8") as f:
         yaml.dump(surge_data, f)
 
     print("\n  ✓ 配置生成完成!")
-    print("\n  你可以手动编辑 surge_config.yaml 添加:")
-    print("    - 自定义代理节点 (proxies)")
+    print("\n  你可以手动编辑 config_surge.yaml 添加:")
+    print("    - 自定义代理节点 (proxies: {name: surge_value})")
     print("    - 自定义规则 (rules)")
-
-    print(f"\n  ✓ 配置生成完成!")
-    # message already printed above for surge_config.yaml
+    print("    - 第三方订阅源 (sources)")
 
 
 if __name__ == "__main__":

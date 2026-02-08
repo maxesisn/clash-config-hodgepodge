@@ -100,10 +100,10 @@ def _validate_config(path: str, proxy_url: str | None = None) -> bool:
     return True
 
 # 读取配置
-with open("common_config.yaml", "r", encoding="utf-8") as f:
+with open("config_common.yaml", "r", encoding="utf-8") as f:
     common_config = yaml.load(f) or {}
 
-with open("clash_config.yaml", "r", encoding="utf-8") as f:
+with open("config_clash.yaml", "r", encoding="utf-8") as f:
     clash_config = yaml.load(f) or {}
 
 # 代理设置仅从配置读取
