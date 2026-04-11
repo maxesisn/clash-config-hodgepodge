@@ -4,6 +4,7 @@ import subprocess
 import httpx
 import ruamel.yaml
 from copy import deepcopy
+from fakeip_convert import convert_fakeip_filters
 
 yaml = ruamel.yaml.YAML()
 yaml.indent(mapping=4)
@@ -173,6 +174,21 @@ with open("base.yaml", "r", encoding="utf-8") as f:
         print("错误: 基础订阅配置无效或为空")
         os.remove("base.yaml")
         exit(1)
+
+# ── fake-ip-filter 转换为 rule 模式 ──
+dns_section = base.get("dns", {})
+original_filters = dns_section.get("fake-ip-filter")
+force_proxy_domains = clash_config.get("fakeip_force_proxy_domains", [])
+
+if original_filters and isinstance(original_filters, list):
+    print(f"转换 fake-ip-filter: {len(original_filters)} 条 → rule 模式")
+    converted_rules = convert_fakeip_filters(original_filters, force_proxy_domains)
+    dns_section["fake-ip-filter-mode"] = "rule"
+    dns_section["fake-ip-filter"] = converted_rules
+    print(f"  转换完成: {len(converted_rules)} 条规则"
+          f"（含 {len(force_proxy_domains)} 条强制 fake-ip 例外）")
+elif force_proxy_domains:
+    print("警告: 配置了 fakeip_force_proxy_domains 但订阅中无 fake-ip-filter，跳过转换")
 
 # 系统保留代理（不会从 proxy-groups 中移除）
 system_proxies = {"DIRECT", "REJECT"}

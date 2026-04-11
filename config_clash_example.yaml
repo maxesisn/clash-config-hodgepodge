@@ -30,6 +30,10 @@ proxies:
     reality-opts:
       public-key: example
       short-id: 6ba85179e30d4fc2
+# 强制使用 fake-ip 的域名（即使它们匹配 geosite:cn 等 real-ip 规则）
+# 用于解决某些 CN 域名实际需要代理访问的情况
+fakeip_force_proxy_domains:
+  - bigo.tv
 rules:
   - DST-PORT,3478,DIRECT
   - DOMAIN-SUFFIX,example.com,{ai}
