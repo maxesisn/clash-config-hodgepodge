@@ -269,16 +269,18 @@ for proxy in custom_proxies:
         base["proxies"].append(proxy)
         retained_proxy_names.add(proxy_name)
 
-        # 将自定义代理添加到主选择组
+        # 将自定义代理添加到代理组
         if main_select_group:
             for group in base.get('proxy-groups', []):
-                if group.get("name") == main_select_group:
+                gname = group.get("name", "")
+                gtype = group.get("type", "")
+                if gname == "White":
+                    continue
+                # 添加到主选择组、所有 select 组、以及所有 url-test/fallback/load-balance 组
+                if (gname == main_select_group
+                        or gtype in ("select", "url-test", "fallback", "load-balance")):
                     if proxy_name not in group.get("proxies", []):
-                        group["proxies"].append(proxy_name)
-                # 同时添加到所有 select 类型的组（除了 White）
-                elif group.get("type") == "select" and group.get("name") != "White":
-                    if proxy_name not in group.get("proxies", []):
-                        group["proxies"].append(proxy_name)
+                        group.setdefault("proxies", []).append(proxy_name)
 
 # 为 url-test 组设置较短的测试间隔（自定义节点更稳定）
 for group in base.get("proxy-groups", []):
