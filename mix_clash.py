@@ -188,7 +188,13 @@ if original_filters and isinstance(original_filters, list):
     print(f"  转换完成: {len(converted_rules)} 条规则"
           f"（含 {len(force_proxy_domains)} 条强制 fake-ip 例外）")
 elif force_proxy_domains:
-    print("警告: 配置了 fakeip_force_proxy_domains 但订阅中无 fake-ip-filter，跳过转换")
+    print(f"订阅无 fake-ip-filter，生成最小规则集")
+    converted_rules = convert_fakeip_filters([], force_proxy_domains)
+    dns_section["fake-ip-filter-mode"] = "rule"
+    dns_section["fake-ip-filter"] = converted_rules
+    base.setdefault("dns", {}).update(dns_section)
+    print(f"  生成完成: {len(converted_rules)} 条规则"
+          f"（{len(force_proxy_domains)} 条 fake-ip 例外 + geosite:cn 兜底）")
 
 # 系统保留代理（不会从 proxy-groups 中移除）
 system_proxies = {"DIRECT", "REJECT"}
