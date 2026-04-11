@@ -46,8 +46,21 @@ def convert_fakeip_filter_entry(entry: str) -> str:
     return f"DOMAIN-REGEX,^{regex}$,real-ip"
 
 
+# 当订阅无 fake-ip-filter 时使用的默认条目（与 nikki 默认配置对齐）
+DEFAULT_FAKEIP_FILTERS = [
+    "+.lan",
+    "+.local",
+    "geosite:cn",
+    "+.pool.ntp.org",
+    "+.cn",
+    "+.home.arpa",
+    "+.msftconnecttest.com",
+    "+.msftncsi.com",
+]
+
+
 def convert_fakeip_filters(
-    filters: list[str],
+    filters: list[str] | None,
     force_proxy_domains: list[str] | None = None,
     append_geosite_cn: bool = True,
 ) -> list[str]:
@@ -56,9 +69,14 @@ def convert_fakeip_filters(
     force_proxy_domains 中的域名会以 DOMAIN-SUFFIX,xxx,fake-ip 形式
     插入到列表最前面，优先于后续的 real-ip / geosite:cn 规则。
 
-    append_geosite_cn: 若原 filter 中不含 geosite:cn，自动追加到末尾
+    filters 为 None 或空列表时，使用 DEFAULT_FAKEIP_FILTERS 作为基础。
+
+    append_geosite_cn: 若最终 filter 中不含 geosite:cn，自动追加到末尾
     作为兜底，确保国内域名返回 real-ip 走直连。
     """
+    if not filters:
+        filters = list(DEFAULT_FAKEIP_FILTERS)
+
     rules: list[str] = []
 
     # 第一部分: 强制 fake-ip 的例外域名（最高优先级）
