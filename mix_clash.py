@@ -178,9 +178,17 @@ with open("base.yaml", "r", encoding="utf-8") as f:
 # ── fake-ip-filter 转换为 rule 模式 ──
 dns_section = base.get("dns", {})
 original_filters = dns_section.get("fake-ip-filter")
+original_filter_mode = dns_section.get("fake-ip-filter-mode")
 force_proxy_domains = clash_config.get("fakeip_force_proxy_domains", [])
 
-if original_filters and isinstance(original_filters, list):
+if original_filter_mode == "rule" and force_proxy_domains:
+    # Case 3: 已经是 rule 模式，只需在最前面插入 force-proxy 例外
+    existing_rules = original_filters if isinstance(original_filters, list) else []
+    force_rules = [f"DOMAIN-SUFFIX,{d.strip()},fake-ip" for d in force_proxy_domains if d.strip()]
+    dns_section["fake-ip-filter"] = force_rules + existing_rules
+    print(f"fake-ip-filter 已是 rule 模式，插入 {len(force_rules)} 条 fake-ip 例外")
+elif original_filters and isinstance(original_filters, list):
+    # Case 2: 有 fake-ip-filter（blacklist 通配符格式），转换为 rule 模式
     print(f"转换 fake-ip-filter: {len(original_filters)} 条 → rule 模式")
     converted_rules = convert_fakeip_filters(original_filters, force_proxy_domains)
     dns_section["fake-ip-filter-mode"] = "rule"
@@ -188,7 +196,13 @@ if original_filters and isinstance(original_filters, list):
     print(f"  转换完成: {len(converted_rules)} 条规则"
           f"（含 {len(force_proxy_domains)} 条强制 fake-ip 例外）")
 elif force_proxy_domains:
-    print("警告: 配置了 fakeip_force_proxy_domains 但订阅中无 fake-ip-filter，跳过转换")
+    # Case 1: 无 fake-ip-filter，用默认条目生成
+    print("订阅无 fake-ip-filter，使用默认条目生成 rule 模式")
+    converted_rules = convert_fakeip_filters(None, force_proxy_domains)
+    dns_section["fake-ip-filter-mode"] = "rule"
+    dns_section["fake-ip-filter"] = converted_rules
+    base.setdefault("dns", {}).update(dns_section)
+    print(f"  生成完成: {len(converted_rules)} 条规则")
 
 # 系统保留代理（不会从 proxy-groups 中移除）
 system_proxies = {"DIRECT", "REJECT"}
