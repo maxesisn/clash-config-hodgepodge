@@ -217,16 +217,13 @@ base["proxies"] = []
 retained_proxy_names = set(system_proxies)
 
 # 清理 proxy-groups：只保留系统代理，移除原机场节点
-# 仅在配置了 main_select_group 时清理，否则保留原始 groups
-if main_select_group:
-    for group in base.get("proxy-groups", []):
-        if 'proxies' in group:
-            group['proxies'] = [
-                proxy for proxy in group['proxies']
-                if proxy in retained_proxy_names or proxy in system_proxies
-            ]
-else:
-    print("警告: 未配置 main_select，保留原始 proxy-groups")
+for group in base.get("proxy-groups", []):
+    if 'proxies' in group:
+        # 保留系统代理和 special groups
+        group['proxies'] = [
+            proxy for proxy in group['proxies']
+            if proxy in retained_proxy_names or proxy in system_proxies
+        ]
 
 # 获取自定义代理和规则
 custom_proxies = clash_config.get("proxies", [])
@@ -272,7 +269,7 @@ for proxy in custom_proxies:
         base["proxies"].append(proxy)
         retained_proxy_names.add(proxy_name)
 
-        # 将自定义代理添加到代理组
+        # 将自定义代理添加到主选择组
         if main_select_group:
             for group in base.get('proxy-groups', []):
                 if group.get("name") == main_select_group:
@@ -282,11 +279,6 @@ for proxy in custom_proxies:
                 elif group.get("type") == "select" and group.get("name") != "White":
                     if proxy_name not in group.get("proxies", []):
                         group["proxies"].append(proxy_name)
-        else:
-            # 未配置 main_select 时，添加到所有含 proxies 的组
-            for group in base.get('proxy-groups', []):
-                if proxy_name not in group.get("proxies", []):
-                    group.setdefault("proxies", []).append(proxy_name)
 
 # 为 url-test 组设置较短的测试间隔（自定义节点更稳定）
 for group in base.get("proxy-groups", []):
